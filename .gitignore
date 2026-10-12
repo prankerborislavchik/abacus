@@ -1,0 +1,24 @@
+
+# SDK, dependencies and generated output
+.fvm/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Local editors and operating systems
+*.iml
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Agent task worktrees
+.worktrees/
