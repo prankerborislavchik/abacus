@@ -1,0 +1,26 @@
+name: Задача
+description: Поведение, границы и проверяемые критерии готовности
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Результат
+      description: Что сможет сделать пользователь после выполнения задачи?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Что должно работать? Для валидации, «=» и памяти включи unit-тесты в том же PR. Конкретные тестовые сценарии выбирает автор реализации.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст
+      description: При необходимости укажи границы задачи, зависимости и полезные ссылки.
+    validations:
+      required: false
