@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#F2F3EE",
     "theme_color": "#405B45",
-    "description": "Учебный калькулятор на Flutter и Dart",
+    "description": "Калькулятор на Flutter и Dart",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

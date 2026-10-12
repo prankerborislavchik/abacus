@@ -1,8 +1,8 @@
 # Abacus
 
-Учебный калькулятор на Flutter и Dart для macOS, Windows и Linux.
+Калькулятор на Flutter и Dart для macOS, Windows и Linux.
 
-Сейчас доступен **графический каркас**: поле выражения, результат, клавиатура, индикатор памяти и компонент сообщения об ошибке/предупреждении. Поле доступно только для чтения, кнопки отключены. Ввод, валидация, вычисление по `=` и память — следующие задачи команды.
+Сейчас доступен **графический каркас**: поле выражения, результат, клавиатура, индикатор памяти и компонент сообщения об ошибке/предупреждении. Поле доступно только для чтения, кнопки отключены. Ввод, валидация, вычисление по `=` и память ещё не реализованы.
 
 ## Установка
 
@@ -58,7 +58,7 @@ fvm flutter run -d windows
 fvm flutter run -d linux
 ```
 
-В VS Code рекомендуемые расширения указаны в [.vscode/extensions.json](.vscode/extensions.json), путь SDK — `.fvm/flutter_sdk`. Во всех терминальных командах используй префикс `fvm`.
+В `.vscode/` хранятся только общие рекомендации расширений и путь к SDK `.fvm/flutter_sdk`. Редактор можно выбрать любой; личные настройки IDE в Git не добавляем. Во всех терминальных командах используй префикс `fvm`.
 
 Дополнительный web-preview интерфейса:
 
@@ -78,11 +78,15 @@ fvm dart format --output=none --set-exit-if-changed lib test
 fvm flutter analyze --fatal-infos
 ```
 
-`flutter_test` уже подключён. Тестовых файлов на этапе графического каркаса нет; `fvm flutter test` станет рабочей проверкой вместе с первыми тестами. Они обязательны в задачах валидации, `=` и памяти — см. [правила приёмки](docs/contributing.md#unit-тесты-и-приёмка).
+**Валидация, вычисление по `=` и память включают unit-тесты в том же PR**. Автор реализации выбирает сценарии и пишет тесты обычных, граничных и ошибочных случаев. Ревьюер проверяет соответствие критериям issue и полноту проверок. Если обязательных тестов нет, дорабатываем тот же PR до закрытия задачи.
 
-В [GitHub Actions](https://github.com/prankerborislavchik/abacus/actions) на каждом PR и изменении `main` запускаются форматирование, анализ и release-сборки macOS, Windows, Linux. SDK для CI берётся из той же `.fvmrc`. Первый функциональный PR добавляет запуск unit-тестов в job `Quality`.
+`flutter_test` уже подключён. Тесты функций и классов размещаем в `test/calculator/`, в файлах `*_test.dart`, используя `test`, `group` и `expect` из `package:flutter_test/flutter_test.dart`. [Официальный пример unit-теста](https://docs.flutter.dev/cookbook/testing/unit/introduction) показывает этот подход. Запуск — `fvm flutter test`.
 
-Успешные сборки сохраняются в artifacts запуска CI на 7 дней. Это архивы приложения, без установщика и подписи для распространения. Сборка в CI подтверждает компиляцию; настоящее окно Windows/Linux дополнительно проверяют участники на своих машинах.
+Тестовых файлов пока нет. PR с первыми тестами добавляет шаг `flutter test` в job `Quality`.
+
+В [GitHub Actions](https://github.com/prankerborislavchik/abacus/actions) на каждом PR и изменении `main` запускаются форматирование, анализ и release-сборки macOS, Windows, Linux. SDK для CI берётся из той же `.fvmrc`.
+
+Успешные сборки сохраняются в artifacts запуска CI на 7 дней. Это архивы приложения, без установщика и подписи для распространения. Сборка в CI подтверждает компиляцию; интерфейс проверяй нативным запуском на целевой ОС.
 
 Локальную release-сборку выполняй на соответствующей ОС:
 
@@ -92,17 +96,38 @@ fvm flutter build windows --release
 fvm flutter build linux --release
 ```
 
-Установщик и полный учебный цикл получения исходников, сборки, тестирования, упаковки и установки добавляются отдельными задачами.
-
 ## Работа в команде
 
-Общий процесс — [короткая ветка → PR → ревью → merge](docs/contributing.md). Там же описаны trunk-based development, обновление ветки через rebase и приёмка тестов.
+Задачи, ответственные и критерии готовности живут в GitHub Issues. Изменения проходят через короткую ветку от актуального `main` → PR → ревью → merge. Стремимся вливать небольшие изменения каждый день или два; подробнее — [trunk-based development с короткими ветками](https://trunkbaseddevelopment.com/short-lived-feature-branches/).
 
-Используем **MCGA от h1km4t1ll0**, основанный на Conventional Commits; сообщения коммитов пишем по-английски. [Правила, пример и установка skill](docs/contributing.md#коммиты-mcga).
+```sh
+git fetch origin
+git switch -c feat/12-expression-validation origin/main
+# Работа, проверки и коммиты
+git push -u origin feat/12-expression-validation
+```
 
-- [Структура кода и границы задач](docs/architecture.md)
+Перед завершением PR обнови свою ветку: `git fetch origin`, затем `git rebase origin/main` и повторные проверки. Для уже опубликованной своей ветки после rebase используй `git push --force-with-lease`. `main` не переписываем.
+
+В PR укажи issue, изменения и результаты проверок; `Closes #12` добавляй, когда задача выполнена целиком. Для merge нужны успешные проверки и одобрение другого участника. Используем **Create a merge commit**, чтобы сохранить историю коммитов.
+
+### Коммиты: MCGA
+
+Используем [MCGA от h1km4t1ll0](https://github.com/h1km4t1ll0/make-commits-great-again), уже основанный на [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Сообщения пишем **по-английски**: обычный префикс (`feat:`, `fix:`, `docs:` и т. д.), энергичный заголовок с CAPS и `!`, точное описание изменения. Имена файлов и API сохраняем как в коде; стандартные merge-сообщения оставляем обычными.
+
+```text
+docs: Setup instructions are FINALLY Clear!
+
+The installation steps were missing. Now README explains the SDK and native prerequisites. Ready to build!
+```
+
+Skill — необязательный помощник для составления сообщения: [установка](https://github.com/h1km4t1ll0/make-commits-great-again#install). Конвенция действует и при ручных коммитах.
+
+## Структура проекта
+
+- [Архитектура калькулятора](docs/architecture.md)
 - [Термины калькулятора](CONTEXT.md)
-- [Инструкции для агентов](AGENTS.md) — единственный основной файл; отдельной копии правил в CLAUDE.md нет
+- [Инструкции для агентов](AGENTS.md)
 - [Шаблон задачи](.github/ISSUE_TEMPLATE/task.yml) и [шаблон PR](.github/pull_request_template.md)
 
 При изменении SDK обновляй `.fvmrc` через `fvm use <версия>`, затем зависимости и `pubspec.lock` в одном PR. Lockfile приложения хранится в Git; SDK, кеши и сборки — в игнорируемых каталогах.

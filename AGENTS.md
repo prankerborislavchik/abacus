@@ -4,13 +4,11 @@
 
 Read `README.md` for setup and commands. Use `fvm flutter` and `fvm dart` locally so the SDK comes from `.fvmrc`.
 
-Before changing code, follow `docs/agents/worktrees.md`. Continue this task in its assigned worktree; preserve unrelated changes.
+Before changing calculator behavior or its UI integration, read `docs/architecture.md`. Implement only the assigned issue's scope.
 
-Before changing calculator behavior or its UI integration, read `docs/architecture.md`. Implement only the assigned issue's scope. The initial application is a visual shell; input, validation, evaluation, and memory are separate team tasks.
+For branches and review, follow `README.md#работа-в-команде`; for test requirements and ownership, follow `README.md#проверки`.
 
-For branches, review, commits, and test requirements, follow `docs/contributing.md`. Validation, evaluation, and memory changes require unit tests in the same PR. The first functional PR also enables their execution in CI.
-
-Before making a commit, read the project-local MCGA skill at `.agents/skills/make-commits-great-again/SKILL.md`. Use English commit messages. Inspect staged and unstaged changes as well as new files; an empty unstaged diff does not imply there is nothing to commit. Existing user authorization takes precedence over the skill's confirmation step.
+Before making a commit, follow `README.md#коммиты-mcga`. The optional upstream skill assists with wording; project language and existing user authorization still govern.
 
 ## Verification
 

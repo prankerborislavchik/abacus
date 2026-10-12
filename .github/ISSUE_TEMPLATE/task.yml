@@ -9,30 +9,18 @@ body:
     validations:
       required: true
   - type: textarea
-    id: scope
-    attributes:
-      label: Границы и зависимости
-      description: Что входит в задачу, что остаётся другим участникам, какие решения или PR нужны сначала?
-    validations:
-      required: true
-  - type: textarea
     id: acceptance
     attributes:
       label: Критерии приёмки
-      description: Перечисли наблюдаемые результаты. Для логики укажи конкретные входы, действия и ожидаемые ответы.
+      description: Что должно работать? Для валидации, «=» и памяти включи unit-тесты в том же PR. Конкретные тестовые сценарии выбирает автор реализации.
       placeholder: |
         - [ ] ...
-        - [ ] Поведение подключено к интерфейсу.
     validations:
       required: true
   - type: textarea
-    id: tests
+    id: context
     attributes:
-      label: Проверки
-      description: Для валидации, «=» и памяти обязательны unit-тесты в том же PR. Укажи обычные, граничные и ошибочные сценарии. Для остальных задач опиши подходящую проверку.
-      placeholder: |
-        - Unit-сценарии и ожидаемые результаты:
-        - Проверка через интерфейс:
-        - Первый функциональный PR также включает flutter test в CI.
+      label: Контекст
+      description: При необходимости укажи границы задачи, зависимости и полезные ссылки.
     validations:
-      required: true
+      required: false

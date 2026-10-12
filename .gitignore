@@ -20,5 +20,5 @@ Thumbs.db
 !.vscode/settings.json
 !.vscode/extensions.json
 
-# Agent task worktrees
-.worktrees/
+# Locally installed agent skills
+.agents/skills/
