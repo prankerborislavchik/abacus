@@ -1,0 +1,38 @@
+name: Задача
+description: Поведение, границы и проверяемые критерии готовности
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Результат
+      description: Что сможет сделать пользователь после выполнения задачи?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Границы и зависимости
+      description: Что входит в задачу, что остаётся другим участникам, какие решения или PR нужны сначала?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Перечисли наблюдаемые результаты. Для логики укажи конкретные входы, действия и ожидаемые ответы.
+      placeholder: |
+        - [ ] ...
+        - [ ] Поведение подключено к интерфейсу.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Проверки
+      description: Для валидации, «=» и памяти обязательны unit-тесты в том же PR. Укажи обычные, граничные и ошибочные сценарии. Для остальных задач опиши подходящую проверку.
+      placeholder: |
+        - Unit-сценарии и ожидаемые результаты:
+        - Проверка через интерфейс:
+        - Первый функциональный PR также включает flutter test в CI.
+    validations:
+      required: true
