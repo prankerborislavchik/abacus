@@ -82,7 +82,7 @@ fvm flutter analyze --fatal-infos
 
 `flutter_test` уже подключён. Тесты функций и классов размещаем в `test/calculator/`, в файлах `*_test.dart`, используя `test`, `group` и `expect` из `package:flutter_test/flutter_test.dart`. [Официальный пример unit-теста](https://docs.flutter.dev/cookbook/testing/unit/introduction) показывает этот подход. Запуск — `fvm flutter test`.
 
-Тестовых файлов пока нет. PR с первыми тестами добавляет шаг `flutter test` в job `Quality`.
+Widget-тесты редактирования в `test/calculator/` проверяют последовательные клики мышью, замену выделения и удаление для настроек macOS, Windows и Linux. Job `Quality` запускает `flutter test`; эти проверки не заменяют нативный запуск на каждой ОС.
 
 В [GitHub Actions](https://github.com/prankerborislavchik/abacus/actions) на каждом PR и изменении `main` запускаются форматирование, анализ и release-сборки macOS, Windows, Linux. SDK для CI берётся из той же `.fvmrc`.
 

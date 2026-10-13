@@ -42,6 +42,9 @@ class ExpressionDisplay extends StatelessWidget {
                 controller: controller,
                 focusNode: focusNode,
                 autofocus: true,
+                // Keypad clicks return focus here without selecting the whole
+                // expression for replacement.
+                selectAllOnFocus: false,
                 autocorrect: false,
                 enableSuggestions: false,
                 smartDashesType: SmartDashesType.disabled,
