@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
 class ExpressionDisplay extends StatelessWidget {
-  const ExpressionDisplay({super.key, required this.expression, this.result});
+  const ExpressionDisplay({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.onSubmitted,
+    this.result,
+  });
 
-  final String expression;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final VoidCallback onSubmitted;
   final String? result;
 
   @override
@@ -30,12 +38,18 @@ class ExpressionDisplay extends StatelessWidget {
             ),
             Semantics(
               label: 'Выражение',
-              child: TextFormField(
-                key: ValueKey(expression),
-                initialValue: expression,
-                readOnly: true,
-                showCursor: false,
-                enableInteractiveSelection: false,
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                autofocus: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                smartDashesType: SmartDashesType.disabled,
+                smartQuotesType: SmartQuotesType.disabled,
+                // Keep focus and selection on Enter, even before calculation
+                // is connected. Both submit controls use the screen callback.
+                onEditingComplete: () {},
+                onSubmitted: (_) => onSubmitted(),
                 textAlign: TextAlign.end,
                 style: const TextStyle(
                   fontSize: 36,

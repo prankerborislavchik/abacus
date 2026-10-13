@@ -3,9 +3,50 @@ import 'package:flutter/material.dart';
 import 'calculator_key.dart';
 
 class CalculatorKeypad extends StatelessWidget {
-  const CalculatorKeypad({super.key, this.onKeyPressed});
+  const CalculatorKeypad({
+    super.key,
+    this.onInsert,
+    this.onBackspace,
+    this.onCalculate,
+  });
 
-  final ValueChanged<String>? onKeyPressed;
+  final ValueChanged<String>? onInsert;
+  final VoidCallback? onBackspace;
+  final VoidCallback? onCalculate;
+
+  static const _insertions = {
+    'sin': 'sin(',
+    'cos': 'cos(',
+    'xʸ': '^',
+    '√x': 'sqrt(',
+    '⌊x⌋': 'floor(',
+    '⌈x⌉': 'ceil(',
+    '(': '(',
+    ')': ')',
+    '÷': '/',
+    '×': '*',
+    '−': '-',
+    '+': '+',
+    '%': '%',
+    '.': '.',
+    '0': '0',
+    '1': '1',
+    '2': '2',
+    '3': '3',
+    '4': '4',
+    '5': '5',
+    '6': '6',
+    '7': '7',
+    '8': '8',
+    '9': '9',
+  };
+
+  VoidCallback? _handler(String label) {
+    if (label == '⌫') return onBackspace;
+    final text = _insertions[label];
+    if (text == null || onInsert == null) return null;
+    return () => onInsert!(text);
+  }
 
   static const _rows = [
     [
@@ -68,9 +109,7 @@ class CalculatorKeypad extends StatelessWidget {
                     label: label,
                     semanticLabel: semanticLabel,
                     tone: tone,
-                    onPressed: onKeyPressed == null
-                        ? null
-                        : () => onKeyPressed!(label),
+                    onPressed: _handler(label),
                   ),
                 ),
             ],
@@ -79,7 +118,7 @@ class CalculatorKeypad extends StatelessWidget {
           label: '=',
           semanticLabel: 'Вычислить',
           tone: CalculatorKeyTone.equals,
-          onPressed: onKeyPressed == null ? null : () => onKeyPressed!('='),
+          onPressed: onCalculate,
         ),
       ],
     );
