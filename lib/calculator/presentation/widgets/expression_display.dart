@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ExpressionDisplay extends StatelessWidget {
   const ExpressionDisplay({
@@ -13,6 +14,47 @@ class ExpressionDisplay extends StatelessWidget {
   final FocusNode focusNode;
   final VoidCallback onSubmitted;
   final String? result;
+
+  static final _forbiddenCharacter = RegExp(r'[^0-9a-zA-Z+*/%^()., \-]');
+  static final _alphabetFormatter = TextInputFormatter.withFunction(
+    (oldValue, newValue) =>
+        _forbiddenCharacter.hasMatch(newValue.text) ? oldValue : newValue,
+  );
+
+  Future<void> _paste(BuildContext context, SelectionChangedCause cause) async {
+    // Inspect the original clipboard before Flutter's single-line formatter
+    // can strip newlines. Reject the entire paste, including over a selection.
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!context.mounted || !focusNode.hasFocus || data?.text == null) return;
+    final text = data!.text!;
+    if (_forbiddenCharacter.hasMatch(text)) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Не удалось вставить: текст содержит недопустимые символы.',
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      return;
+    }
+    final editingContext = focusNode.context;
+    final value = controller.value;
+    if (editingContext == null || !value.selection.isValid) return;
+    Actions.invoke(
+      editingContext,
+      ReplaceTextIntent(
+        value.copyWith(
+          selection: TextSelection.collapsed(offset: value.selection.end),
+        ),
+        text,
+        value.selection,
+        cause,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,33 +80,63 @@ class ExpressionDisplay extends StatelessWidget {
             ),
             Semantics(
               label: 'Выражение',
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                autofocus: true,
-                // Keypad clicks return focus here without selecting the whole
-                // expression for replacement.
-                selectAllOnFocus: false,
-                autocorrect: false,
-                enableSuggestions: false,
-                smartDashesType: SmartDashesType.disabled,
-                smartQuotesType: SmartQuotesType.disabled,
-                // Keep focus and selection on Enter, even before calculation
-                // is connected. Both submit controls use the screen callback.
-                onEditingComplete: () {},
-                onSubmitted: (_) => onSubmitted(),
-                textAlign: TextAlign.end,
-                style: const TextStyle(
-                  fontSize: 36,
-                  height: 1.4,
-                  fontWeight: FontWeight.w400,
-                ),
-                decoration: const InputDecoration(
-                  hintText: '0',
-                  hintStyle: TextStyle(color: Color(0xFF6E7C66)),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+              onPaste: () => _paste(context, SelectionChangedCause.toolbar),
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  PasteTextIntent: CallbackAction<PasteTextIntent>(
+                    onInvoke: (intent) {
+                      _paste(context, intent.cause);
+                      return null;
+                    },
+                  ),
+                },
+                child: TextField(
+                  inputFormatters: [_alphabetFormatter],
+                  contextMenuBuilder: (context, editable) {
+                    return AdaptiveTextSelectionToolbar.buttonItems(
+                      anchors: editable.contextMenuAnchors,
+                      buttonItems: [
+                        for (final item in editable.contextMenuButtonItems)
+                          if (item.type == ContextMenuButtonType.paste)
+                            ContextMenuButtonItem(
+                              type: ContextMenuButtonType.paste,
+                              onPressed: () {
+                                _paste(context, SelectionChangedCause.toolbar);
+                                editable.hideToolbar();
+                              },
+                            )
+                          else
+                            item,
+                      ],
+                    );
+                  },
+                  controller: controller,
+                  focusNode: focusNode,
+                  autofocus: true,
+                  // Keypad clicks return focus here without selecting the whole
+                  // expression for replacement.
+                  selectAllOnFocus: false,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  // Keep focus and selection on Enter, even before calculation
+                  // is connected. Both submit controls use the screen callback.
+                  onEditingComplete: () {},
+                  onSubmitted: (_) => onSubmitted(),
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    height: 1.4,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: '0',
+                    hintStyle: TextStyle(color: Color(0xFF6E7C66)),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
                 ),
               ),
             ),
