@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show SemanticsAction;
 
 import 'package:abacus/calculator/presentation/calculator_screen.dart';
@@ -9,7 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  Completer<Object?>? pendingClipboardRead;
   setUp(() {
+    pendingClipboardRead = null;
     var clipboard = <String, dynamic>{'text': ''};
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
@@ -18,7 +21,9 @@ void main() {
               clipboard = Map<String, dynamic>.from(call.arguments as Map);
               return null;
             case 'Clipboard.getData':
-              return clipboard;
+              return pendingClipboardRead == null
+                  ? clipboard
+                  : pendingClipboardRead!.future;
             case 'Clipboard.hasStrings':
               return {'value': (clipboard['text'] as String).isNotEmpty};
           }
@@ -164,6 +169,46 @@ void main() {
     expectUnchanged(controller);
     expect(find.textContaining('Не удалось вставить:'), findsOneWidget);
   }, variant: platforms);
+
+  for (final forbidden in [false, true]) {
+    testWidgets('delayed context menu paste: forbidden=$forbidden', (
+      tester,
+    ) async {
+      final controller = await showCalculator(tester);
+      await Clipboard.setData(const ClipboardData(text: '7'));
+      final field = tester.widget<TextField>(find.byType(TextField));
+      final editable = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byType(TextField),
+          matching: find.byType(EditableText),
+        ),
+      );
+      editable.showToolbar();
+      await tester.pumpAndSettle();
+      final toolbar = tester.widget<AdaptiveTextSelectionToolbar>(
+        find.byType(AdaptiveTextSelectionToolbar),
+      );
+      pendingClipboardRead = Completer<Object?>();
+      toolbar.buttonItems!
+          .singleWhere((item) => item.type == ContextMenuButtonType.paste)
+          .onPressed!();
+      // Remove the menu before the platform returns the clipboard contents.
+      await tester.pump();
+      expect(find.byType(AdaptiveTextSelectionToolbar), findsNothing);
+      expect(field.focusNode!.hasFocus, isTrue);
+      pendingClipboardRead!.complete({'text': forbidden ? '12ж3' : '7'});
+      await tester.pumpAndSettle();
+      if (forbidden) {
+        expectUnchanged(controller);
+        expect(find.textContaining('Не удалось вставить:'), findsOneWidget);
+      } else {
+        expect(controller.text, '174');
+        expect(controller.selection, const TextSelection.collapsed(offset: 2));
+        expect(find.text('99'), findsNothing);
+        expect(find.text(notice), findsNothing);
+      }
+    }, variant: platforms);
+  }
 
   testWidgets('accessibility paste also rejects the original clipboard', (
     tester,

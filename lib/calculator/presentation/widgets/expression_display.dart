@@ -92,7 +92,8 @@ class ExpressionDisplay extends StatelessWidget {
                 },
                 child: TextField(
                   inputFormatters: [_alphabetFormatter],
-                  contextMenuBuilder: (context, editable) {
+                  // Paste must outlive the menu overlay while reading the clipboard.
+                  contextMenuBuilder: (_, editable) {
                     return AdaptiveTextSelectionToolbar.buttonItems(
                       anchors: editable.contextMenuAnchors,
                       buttonItems: [
