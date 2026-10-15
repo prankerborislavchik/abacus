@@ -32,7 +32,8 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze
         run: flutter analyze --fatal-infos
-      # The PR introducing the first tests adds flutter test here.
+      - name: Test
+        run: flutter test
 
   desktop:
     name: Build (${{ matrix.target }})

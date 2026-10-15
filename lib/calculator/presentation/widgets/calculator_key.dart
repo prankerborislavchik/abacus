@@ -37,8 +37,8 @@ class CalculatorKey extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: background,
             foregroundColor: foreground,
-            disabledBackgroundColor: background,
-            disabledForegroundColor: foreground,
+            disabledBackgroundColor: background.withValues(alpha: 0.45),
+            disabledForegroundColor: foreground.withValues(alpha: 0.4),
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

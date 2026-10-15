@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'calculator/presentation/calculator_screen.dart';
+import 'calculator/presentation/widgets/desktop_menu.dart';
 
 class AbacusApp extends StatelessWidget {
   const AbacusApp({super.key, this.home = const CalculatorScreen()});
@@ -32,7 +33,7 @@ class AbacusApp extends StatelessWidget {
           waitDuration: Duration(milliseconds: 600),
         ),
       ),
-      home: home,
+      home: DesktopMenu(child: home),
     );
   }
 }
