@@ -94,5 +94,44 @@ void main() {
       final ast = BinaryOpNode('*', NumberNode(1e308), NumberNode(1e308));
       expect(() => evaluate(ast), throwsA(isA<EvaluationException>()));
     });
+
+    test('переполнение в дочернем узле: 1/(10^400)', () {
+      // 10^400 само по себе переполняется; деление не должно скрывать это.
+      final ast = BinaryOpNode(
+        '/',
+        NumberNode(1),
+        BinaryOpNode('^', NumberNode(10), NumberNode(400)),
+      );
+      expect(() => evaluate(ast), throwsA(isA<EvaluationException>()));
+    });
+
+    test('NaN в дочернем узле: ((-1)^0.5)^0', () {
+      // (-1)^0.5 даёт NaN; внешняя степень не должна превращать это в 1.0.
+      final inner = BinaryOpNode(
+        '^',
+        UnaryOpNode('-', NumberNode(1)),
+        NumberNode(0.5),
+      );
+      final ast = BinaryOpNode('^', inner, NumberNode(0));
+      expect(() => evaluate(ast), throwsA(isA<EvaluationException>()));
+    });
+  });
+
+  group('evaluate: большие конечные углы в DEG', () {
+    // Регрессия: arg * pi / 180 переполнялся для конечного arg,
+    // потому что умножение на pi выполнялось до деления на 180.
+    test('sin(1e308) в DEG возвращает конечное число', () {
+      final ast = FunctionNode('sin', NumberNode(1e308));
+      final result = evaluate(ast, angleMode: AngleMode.deg);
+      expect(result.isFinite, isTrue);
+      expect(result.abs(), lessThanOrEqualTo(1));
+    });
+
+    test('cos(1e308) в DEG возвращает конечное число', () {
+      final ast = FunctionNode('cos', NumberNode(1e308));
+      final result = evaluate(ast, angleMode: AngleMode.deg);
+      expect(result.isFinite, isTrue);
+      expect(result.abs(), lessThanOrEqualTo(1));
+    });
   });
 }
