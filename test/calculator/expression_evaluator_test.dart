@@ -3,6 +3,32 @@ import 'package:abacus/calculator/domain/expression_node.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('long flat AST reports complexity instead of overflowing the stack', () {
+    ExpressionNode expression = const NumberNode(1);
+    for (var i = 1; i < 20000; i++) {
+      expression = BinaryOpNode('+', expression, const NumberNode(1));
+    }
+    expect(
+      () => evaluate(expression),
+      throwsA(
+        isA<EvaluationException>().having(
+          (error) => error.message,
+          'message',
+          'Слишком сложное выражение',
+        ),
+      ),
+    );
+    expect(evaluate(const NumberNode(3)), 3);
+  });
+
+  test('moderately deep flat AST still evaluates', () {
+    ExpressionNode expression = const NumberNode(1);
+    for (var i = 1; i < 300; i++) {
+      expression = BinaryOpNode('+', expression, const NumberNode(1));
+    }
+    expect(evaluate(expression), 300);
+  });
+
   group('evaluate: бинарные операции', () {
     test('складывает и умножает с учётом дерева: 2+3*4 = 14', () {
       final ast = BinaryOpNode(

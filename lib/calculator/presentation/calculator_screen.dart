@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/calculator_memory.dart';
+import '../domain/expression_evaluator.dart';
 import '../domain/expression_node.dart';
 import '../domain/expression_parser.dart';
 import '../domain/result_formatter.dart';
@@ -17,7 +18,6 @@ class CalculatorScreen extends StatefulWidget {
     this.result,
     this.session,
     this.notice,
-    this.onCalculate,
   });
 
   /// Initial expression and feedback, useful when embedding the screen.
@@ -27,9 +27,6 @@ class CalculatorScreen extends StatefulWidget {
   /// External owners dispose their controller; otherwise the screen owns one.
   final CalculatorSessionController? session;
   final CalculatorNotice? notice;
-
-  /// Both Enter and `=` pass the shared AST without requiring a second parse.
-  final ValueChanged<ExpressionNode>? onCalculate;
 
   @override
   State<CalculatorScreen> createState() => _CalculatorScreenState();
@@ -43,6 +40,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   CalculatorNotice? _notice;
   late CalculatorSessionController _session;
   double? _lastSessionResult;
+  AngleMode _angleMode = AngleMode.deg;
 
   @override
   void initState() {
@@ -139,7 +137,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         : TextSelection.collapsed(offset: value.text.length);
   }
 
-  // Also used by future memory recall: callers supply the insertion text.
+  // Expression buttons and memory recall share cursor/selection handling.
   void _insertText(String text) {
     final selection = _selection;
     _replaceRange(selection.start, selection.end, text);
@@ -173,13 +171,31 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _result = null;
         _notice = null;
       });
-      widget.onCalculate?.call(expression);
+      _session.publishResult(evaluate(expression, angleMode: _angleMode));
     } on ParseException catch (error) {
-      setState(() {
-        _result = null;
-        _notice = CalculatorNotice(message: error.message);
-      });
+      _showCalculationError(error.message);
+    } on EvaluationException catch (error) {
+      _showCalculationError(error.message);
     }
+    _expressionFocus.requestFocus();
+  }
+
+  void _showCalculationError(String message) {
+    setState(() {
+      _result = null;
+      _notice = CalculatorNotice(message: message);
+    });
+  }
+
+  void _changeAngleMode(Set<AngleMode> selection) {
+    final mode = selection.single;
+    if (mode == _angleMode) return;
+    _session.invalidateResult();
+    setState(() {
+      _angleMode = mode;
+      _result = null;
+      _notice = null;
+    });
     _expressionFocus.requestFocus();
   }
 
@@ -230,7 +246,40 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                     ? null
                                     : formatResult(_session.memoryValue!),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: [
+                                  const Text(
+                                    'Углы',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF65765E),
+                                    ),
+                                  ),
+                                  SegmentedButton<AngleMode>(
+                                    segments: const [
+                                      ButtonSegment(
+                                        value: AngleMode.deg,
+                                        label: Text('DEG'),
+                                        tooltip: 'Градусы',
+                                      ),
+                                      ButtonSegment(
+                                        value: AngleMode.rad,
+                                        label: Text('RAD'),
+                                        tooltip: 'Радианы',
+                                      ),
+                                    ],
+                                    selected: {_angleMode},
+                                    showSelectedIcon: false,
+                                    onSelectionChanged: _changeAngleMode,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
                               ExpressionDisplay(
                                 controller: _expressionController,
                                 focusNode: _expressionFocus,

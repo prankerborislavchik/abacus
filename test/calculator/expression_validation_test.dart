@@ -1,4 +1,3 @@
-import 'package:abacus/calculator/domain/expression_node.dart';
 import 'package:abacus/calculator/presentation/calculator_screen.dart';
 import 'package:abacus/calculator/presentation/widgets/calculator_notice.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +12,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final received = <ExpressionNode>[];
-      await tester.pumpWidget(
-        MaterialApp(home: CalculatorScreen(onCalculate: received.add)),
-      );
+      await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
       final field = find.byType(TextField);
       await tester.enterText(field, '2+*3');
       expect(find.byType(CalculatorNotice), findsNothing);
@@ -32,14 +28,12 @@ void main() {
       await submit();
       expect(find.byType(CalculatorNotice), findsOneWidget);
       expect(tester.widget<TextField>(field).controller!.text, '2+*3');
-      expect(received, isEmpty);
       await tester.enterText(field, '2+3*4');
       await tester.pump();
       expect(find.byType(CalculatorNotice), findsNothing);
       await submit();
-      expect(received.single, isA<BinaryOpNode>());
       expect(find.byType(CalculatorNotice), findsNothing);
-      expect(find.text('14'), findsNothing);
+      expect(find.text('14'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -51,10 +45,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final received = <ExpressionNode>[];
-    await tester.pumpWidget(
-      MaterialApp(home: CalculatorScreen(onCalculate: received.add)),
-    );
+    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
     final field = find.byType(TextField);
     final expression = '(' * 5000;
     await tester.enterText(field, expression);
@@ -65,7 +56,6 @@ void main() {
     expect(find.byType(CalculatorNotice), findsOneWidget);
     expect(find.textContaining('Слишком глубокая вложенность'), findsOneWidget);
     expect(tester.widget<TextField>(field).controller!.text, expression);
-    expect(received, isEmpty);
     expect(tester.takeException(), isNull);
   });
 }

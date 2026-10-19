@@ -1,5 +1,3 @@
-import 'package:abacus/calculator/domain/expression_evaluator.dart';
-import 'package:abacus/calculator/domain/expression_node.dart';
 import 'package:abacus/calculator/presentation/calculator_screen.dart';
 import 'package:abacus/calculator/presentation/calculator_session_controller.dart';
 import 'package:abacus/calculator/presentation/widgets/calculator_notice.dart';
@@ -47,14 +45,12 @@ void main() {
           ..addToMemory()
           ..publishResult(77);
         addTearDown(session.dispose);
-        final received = <ExpressionNode>[];
         await tester.pumpWidget(
           MaterialApp(
             home: CalculatorScreen(
               expression: '2+*3',
               result: '99',
               session: session,
-              onCalculate: received.add,
             ),
           ),
         );
@@ -65,7 +61,6 @@ void main() {
         expect(session.currentResult, isNull);
         expect(session.memoryValue, 5);
         expect(enabled(tester, 'M+'), isFalse);
-        expect(received, isEmpty);
         expect(find.byType(CalculatorNotice), findsOneWidget);
         expect(
           tester.widget<TextField>(find.byType(TextField)).controller!.text,
@@ -88,14 +83,7 @@ void main() {
         addTearDown(session.dispose);
         await tester.pumpWidget(
           MaterialApp(
-            home: CalculatorScreen(
-              expression: '2+3*4',
-              session: session,
-              onCalculate: (expression) {
-                expect(session.currentResult, isNull);
-                session.publishResult(evaluate(expression));
-              },
-            ),
+            home: CalculatorScreen(expression: '2+3*4', session: session),
           ),
         );
 
@@ -112,7 +100,7 @@ void main() {
     );
   }
 
-  testWidgets('validation works without a calculation callback', (
+  testWidgets('the screen validates and calculates without external wiring', (
     tester,
   ) async {
     sizeScreen(tester);
@@ -128,8 +116,8 @@ void main() {
     await tester.enterText(find.byType(TextField), '2+3*4');
     await click(tester, '=');
     expect(find.byType(CalculatorNotice), findsNothing);
-    expect(find.text('14'), findsNothing);
-    expect(enabled(tester, 'M+'), isFalse);
+    expect(find.text('14'), findsOneWidget);
+    expect(enabled(tester, 'M+'), isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -142,13 +130,7 @@ void main() {
       ..addToMemory();
     addTearDown(session.dispose);
     await tester.pumpWidget(
-      MaterialApp(
-        home: CalculatorScreen(
-          session: session,
-          onCalculate: (expression) =>
-              session.publishResult(evaluate(expression)),
-        ),
-      ),
+      MaterialApp(home: CalculatorScreen(session: session)),
     );
     await click(tester, 'AC');
     await click(tester, 'MR');
