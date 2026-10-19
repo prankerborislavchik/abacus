@@ -1,7 +1,10 @@
+import 'dart:ui';
+
 import 'package:abacus/calculator/presentation/calculator_screen.dart';
 import 'package:abacus/calculator/presentation/calculator_session_controller.dart';
 import 'package:abacus/calculator/presentation/widgets/calculator_notice.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -72,6 +75,117 @@ void main() {
     expect(session.currentResult, isNull);
     expect(session.memoryValue, -2.5);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'MC returns focus so keyboard editing continues',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final session = CalculatorSessionController()
+        ..publishResult(5)
+        ..addToMemory();
+      addTearDown(session.dispose);
+      await tester.pumpWidget(
+        MaterialApp(home: CalculatorScreen(session: session)),
+      );
+      await tester.pumpAndSettle();
+      final field = find.byType(TextField);
+      await tester.enterText(field, '12');
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      final button = find.widgetWithText(FilledButton, 'MC');
+      await tester.ensureVisible(button);
+      final position = tester.getCenter(button);
+      await mouse.moveTo(position);
+      await mouse.down(position);
+      await tester.pump();
+      await mouse.up();
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pump();
+
+      expect(tester.widget<TextField>(field).controller!.text, '1');
+      expect(session.memoryValue, isNull);
+    },
+    variant: TargetPlatformVariant({
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+      TargetPlatform.linux,
+    }),
+  );
+
+  testWidgets('MC clears a stale overflow notice before the next M+', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final session = CalculatorSessionController()
+      ..publishResult(1e308)
+      ..addToMemory();
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      MaterialApp(home: CalculatorScreen(session: session)),
+    );
+    Future<void> click(String label) async {
+      final button = find.widgetWithText(FilledButton, label);
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+
+    await click('M+');
+    expect(find.byType(CalculatorNotice), findsOneWidget);
+
+    await click('MC');
+    expect(find.byType(CalculatorNotice), findsNothing);
+    expect(session.memoryValue, isNull);
+    expect(session.currentResult, 1e308);
+
+    await click('M+');
+    expect(find.byType(CalculatorNotice), findsNothing);
+    expect(session.memoryValue, 1e308);
+  });
+
+  testWidgets('successful M+ clears an earlier overflow notice', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final session = CalculatorSessionController()
+      ..publishResult(1e308)
+      ..addToMemory();
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      MaterialApp(home: CalculatorScreen(session: session)),
+    );
+    Future<void> click(String label) async {
+      final button = find.widgetWithText(FilledButton, label);
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+
+    await click('M+');
+    expect(find.byType(CalculatorNotice), findsOneWidget);
+
+    // Another owner of the session clears memory without the screen handler,
+    // so the overflow notice is still visible when the next M+ succeeds.
+    session.clearMemory();
+    await tester.pump();
+    expect(find.byType(CalculatorNotice), findsOneWidget);
+
+    await click('M+');
+    expect(find.byType(CalculatorNotice), findsNothing);
+    expect(session.memoryValue, 1e308);
   });
 
   testWidgets('AC clears diagnostics even when expression is already empty', (

@@ -97,7 +97,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _session.addToMemory();
     } on MemoryException catch (error) {
       setState(() => _notice = CalculatorNotice(message: error.message));
+      _expressionFocus.requestFocus();
+      return;
     }
+    setState(() => _notice = null);
+    _expressionFocus.requestFocus();
+  }
+
+  void _clearMemory() {
+    _session.clearMemory();
+    setState(() => _notice = null);
     _expressionFocus.requestFocus();
   }
 
@@ -229,7 +238,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                 onMemoryRecall: _session.memoryValue == null
                                     ? null
                                     : _recallMemory,
-                                onMemoryClear: _session.clearMemory,
+                                onMemoryClear: _clearMemory,
                                 onClear: _clearExpression,
                                 onCalculate: widget.onCalculate == null
                                     ? null
