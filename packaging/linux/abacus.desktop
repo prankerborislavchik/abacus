@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Abacus
+Comment=Calculator for mathematical expressions
+Exec=/opt/abacus/abacus
+Icon=abacus
+Terminal=false
+Categories=Utility;Calculator;

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Abacus @VERSION@</title>
+    <options customize="never" require-scripts="false" hostArchitectures="@ARCH@"/>
+    <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
+    <volume-check script="true">
+        <allowed-os-versions><os-version min="@MIN_OS@"/></allowed-os-versions>
+    </volume-check>
+    <choices-outline><line choice="abacus"/></choices-outline>
+    <choice id="abacus" title="Abacus" description="Desktop calculator" visible="false">
+        <pkg-ref id="io.github.prankerborislavchik.abacus"/>
+    </choice>
+    <pkg-ref id="io.github.prankerborislavchik.abacus" version="@PACKAGE_VERSION@" onConclusion="None">abacus-component.pkg</pkg-ref>
+</installer-gui-script>
