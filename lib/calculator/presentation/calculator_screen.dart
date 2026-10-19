@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../domain/calculator_memory.dart';
+import '../domain/result_formatter.dart';
+import 'calculator_session_controller.dart';
+
 import 'widgets/calculator_keypad.dart';
 import 'widgets/calculator_notice.dart';
 import 'widgets/expression_display.dart';
@@ -9,7 +13,7 @@ class CalculatorScreen extends StatefulWidget {
     super.key,
     this.expression = '',
     this.result,
-    this.memory,
+    this.session,
     this.notice,
     this.onCalculate,
   });
@@ -17,7 +21,9 @@ class CalculatorScreen extends StatefulWidget {
   /// Initial expression and feedback, useful when embedding the screen.
   final String expression;
   final String? result;
-  final String? memory;
+
+  /// External owners dispose their controller; otherwise the screen owns one.
+  final CalculatorSessionController? session;
   final CalculatorNotice? notice;
 
   /// Both Enter and `=` submit the current expression through this callback.
@@ -34,6 +40,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   late String _previousExpression;
   String? _result;
   CalculatorNotice? _notice;
+  late CalculatorSessionController _session;
+  double? _lastSessionResult;
 
   @override
   void initState() {
@@ -41,6 +49,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     _previousExpression = widget.expression;
     _result = widget.result;
     _notice = widget.notice;
+    _session = widget.session ?? CalculatorSessionController();
+    _lastSessionResult = _session.currentResult;
+    _session.addListener(_sessionChanged);
     _expressionController = TextEditingController(text: widget.expression)
       ..selection = TextSelection.collapsed(offset: widget.expression.length)
       ..addListener(_expressionChanged);
@@ -50,10 +61,74 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final expression = _expressionController.text;
     if (expression == _previousExpression) return;
     _previousExpression = expression;
+    _session.invalidateResult();
     setState(() {
       _result = null;
       _notice = null;
     });
+  }
+
+  void _sessionChanged() {
+    setState(() {
+      if (_lastSessionResult != _session.currentResult) {
+        _result = null;
+        if (_session.currentResult != null) _notice = null;
+      }
+      _lastSessionResult = _session.currentResult;
+    });
+  }
+
+  @override
+  void didUpdateWidget(CalculatorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.session != widget.session) {
+      _session.removeListener(_sessionChanged);
+      if (oldWidget.session == null) _session.dispose();
+      _session = widget.session ?? CalculatorSessionController();
+      _lastSessionResult = _session.currentResult;
+      _session.addListener(_sessionChanged);
+      _result = null;
+      _notice = null;
+    }
+  }
+
+  void _addToMemory() {
+    try {
+      _session.addToMemory();
+    } on MemoryException catch (error) {
+      setState(() => _notice = CalculatorNotice(message: error.message));
+      _expressionFocus.requestFocus();
+      return;
+    }
+    setState(() => _notice = null);
+    _expressionFocus.requestFocus();
+  }
+
+  void _clearMemory() {
+    _session.clearMemory();
+    setState(() => _notice = null);
+    _expressionFocus.requestFocus();
+  }
+
+  void _recallMemory() {
+    final text = _session.recallExpression();
+    if (text == null) return;
+    _session.invalidateResult();
+    setState(() {
+      _result = null;
+      _notice = null;
+    });
+    _insertText(text);
+  }
+
+  void _clearExpression() {
+    _session.invalidateResult();
+    _expressionController.clear();
+    setState(() {
+      _result = null;
+      _notice = null;
+    });
+    _expressionFocus.requestFocus();
   }
 
   TextSelection get _selection {
@@ -88,12 +163,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   void _submitExpression() {
+    _session.invalidateResult();
     widget.onCalculate?.call(_expressionController.text);
     _expressionFocus.requestFocus();
   }
 
   @override
   void dispose() {
+    _session.removeListener(_sessionChanged);
+    if (widget.session == null) _session.dispose();
     _expressionController.dispose();
     _expressionFocus.dispose();
     super.dispose();
@@ -132,12 +210,18 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _Header(memory: widget.memory),
+                              _Header(
+                                memory: _session.memoryValue == null
+                                    ? null
+                                    : formatResult(_session.memoryValue!),
+                              ),
                               const SizedBox(height: 24),
                               ExpressionDisplay(
                                 controller: _expressionController,
                                 focusNode: _expressionFocus,
-                                result: _result,
+                                result: _session.currentResult == null
+                                    ? _result
+                                    : formatResult(_session.currentResult!),
                                 onSubmitted: _submitExpression,
                               ),
                               if (_notice case final message?) ...[
@@ -148,6 +232,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                               CalculatorKeypad(
                                 onInsert: _insertText,
                                 onBackspace: _deleteBackward,
+                                onMemoryAdd: _session.currentResult == null
+                                    ? null
+                                    : _addToMemory,
+                                onMemoryRecall: _session.memoryValue == null
+                                    ? null
+                                    : _recallMemory,
+                                onMemoryClear: _clearMemory,
+                                onClear: _clearExpression,
                                 onCalculate: widget.onCalculate == null
                                     ? null
                                     : _submitExpression,

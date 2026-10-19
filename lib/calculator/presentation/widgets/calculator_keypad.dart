@@ -8,11 +8,19 @@ class CalculatorKeypad extends StatelessWidget {
     this.onInsert,
     this.onBackspace,
     this.onCalculate,
+    this.onMemoryAdd,
+    this.onMemoryRecall,
+    this.onMemoryClear,
+    this.onClear,
   });
 
   final ValueChanged<String>? onInsert;
   final VoidCallback? onBackspace;
   final VoidCallback? onCalculate;
+  final VoidCallback? onMemoryAdd;
+  final VoidCallback? onMemoryRecall;
+  final VoidCallback? onMemoryClear;
+  final VoidCallback? onClear;
 
   static const _insertions = {
     'sin': 'sin(',
@@ -42,6 +50,10 @@ class CalculatorKeypad extends StatelessWidget {
   };
 
   VoidCallback? _handler(String label) {
+    if (label == 'M+') return onMemoryAdd;
+    if (label == 'MR') return onMemoryRecall;
+    if (label == 'MC') return onMemoryClear;
+    if (label == 'AC') return onClear;
     if (label == '⌫') return onBackspace;
     final text = _insertions[label];
     if (text == null || onInsert == null) return null;
@@ -52,8 +64,8 @@ class CalculatorKeypad extends StatelessWidget {
     [
       ('MC', 'MC', CalculatorKeyTone.function),
       ('M+', 'M+', CalculatorKeyTone.function),
-      ('AC', 'AC', CalculatorKeyTone.function),
-      ('⌫', 'Удалить символ', CalculatorKeyTone.function),
+      ('MR', 'Вставить память', CalculatorKeyTone.function),
+      ('AC', 'Очистить выражение', CalculatorKeyTone.function),
     ],
     [
       ('sin', 'Синус', CalculatorKeyTone.function),
@@ -114,11 +126,27 @@ class CalculatorKeypad extends StatelessWidget {
                 ),
             ],
           ),
-        CalculatorKey(
-          label: '=',
-          semanticLabel: 'Вычислить',
-          tone: CalculatorKeyTone.equals,
-          onPressed: onCalculate,
+        Row(
+          spacing: 8,
+          children: [
+            Expanded(
+              child: CalculatorKey(
+                label: '⌫',
+                semanticLabel: 'Удалить символ',
+                tone: CalculatorKeyTone.function,
+                onPressed: onBackspace,
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: CalculatorKey(
+                label: '=',
+                semanticLabel: 'Вычислить',
+                tone: CalculatorKeyTone.equals,
+                onPressed: onCalculate,
+              ),
+            ),
+          ],
         ),
       ],
     );
