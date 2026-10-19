@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../domain/calculator_memory.dart';
+import '../domain/expression_node.dart';
+import '../domain/expression_parser.dart';
 import '../domain/result_formatter.dart';
 import 'calculator_session_controller.dart';
 
@@ -26,9 +28,8 @@ class CalculatorScreen extends StatefulWidget {
   final CalculatorSessionController? session;
   final CalculatorNotice? notice;
 
-  /// Both Enter and `=` submit the current expression through this callback.
-  /// Calculation stays unavailable until an implementation is connected.
-  final ValueChanged<String>? onCalculate;
+  /// Both Enter and `=` pass the shared AST without requiring a second parse.
+  final ValueChanged<ExpressionNode>? onCalculate;
 
   @override
   State<CalculatorScreen> createState() => _CalculatorScreenState();
@@ -164,7 +165,21 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   void _submitExpression() {
     _session.invalidateResult();
-    widget.onCalculate?.call(_expressionController.text);
+    try {
+      final expression = const ExpressionParser().parse(
+        _expressionController.text,
+      );
+      setState(() {
+        _result = null;
+        _notice = null;
+      });
+      widget.onCalculate?.call(expression);
+    } on ParseException catch (error) {
+      setState(() {
+        _result = null;
+        _notice = CalculatorNotice(message: error.message);
+      });
+    }
     _expressionFocus.requestFocus();
   }
 
@@ -240,9 +255,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                     : _recallMemory,
                                 onMemoryClear: _clearMemory,
                                 onClear: _clearExpression,
-                                onCalculate: widget.onCalculate == null
-                                    ? null
-                                    : _submitExpression,
+                                onCalculate: _submitExpression,
                               ),
                             ],
                           ),
