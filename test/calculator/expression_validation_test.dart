@@ -43,4 +43,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('deep nesting shows a parse error and keeps the expression', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final received = <ExpressionNode>[];
+    await tester.pumpWidget(
+      MaterialApp(home: CalculatorScreen(onCalculate: received.add)),
+    );
+    final field = find.byType(TextField);
+    final expression = '(' * 5000;
+    await tester.enterText(field, expression);
+
+    await tester.tap(find.widgetWithText(FilledButton, '='));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CalculatorNotice), findsOneWidget);
+    expect(find.textContaining('Слишком глубокая вложенность'), findsOneWidget);
+    expect(tester.widget<TextField>(field).controller!.text, expression);
+    expect(received, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
 }

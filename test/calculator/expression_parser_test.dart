@@ -82,6 +82,33 @@ void main() {
     });
   }
 
+  test('nesting within the limit still parses', () {
+    final parentheses = '${'(' * 100}1${')' * 100}';
+    expect(parser.parse(parentheses), isA<NumberNode>());
+    expect(parser.parse('${'-' * 100}2'), isA<UnaryOpNode>());
+    expect(parser.parse(List.filled(100, '2').join('^')), isA<BinaryOpNode>());
+  });
+
+  for (final entry in {
+    'unclosed deep parentheses': '(' * 5000,
+    'balanced deep parentheses': '${'(' * 5000}1${')' * 5000}',
+    'long unary minus chain': '${'-' * 20000}1',
+    'long power chain': List.filled(5000, '2').join('^'),
+  }.entries) {
+    test('${entry.key} fails with ParseException, not StackOverflowError', () {
+      expect(
+        () => parser.parse(entry.value),
+        throwsA(
+          isA<ParseException>().having(
+            (error) => error.message,
+            'message',
+            contains('Слишком глубокая вложенность'),
+          ),
+        ),
+      );
+    });
+  }
+
   for (final expression in ['1/0', '5%0', 'sqrt(-1)']) {
     test('$expression is a mathematical error, not a syntax error', () {
       final ast = parser.parse(expression);

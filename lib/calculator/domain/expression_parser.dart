@@ -12,6 +12,10 @@ class _Parser {
 
   final String source;
   int position = 0;
+  int _depth = 0;
+
+  /// Keeps recursive descent well below the Dart stack limit for hostile input.
+  static const _maxNestingDepth = 200;
 
   ExpressionNode parse() {
     final node = _sum();
@@ -22,6 +26,18 @@ class _Parser {
 
   Never _fail(String message) =>
       throw ParseException('$message (позиция ${position + 1}).');
+
+  T _nested<T>(T Function() parse) {
+    if (_depth >= _maxNestingDepth) {
+      _fail('Слишком глубокая вложенность выражения');
+    }
+    _depth++;
+    try {
+      return parse();
+    } finally {
+      _depth--;
+    }
+  }
 
   void _spaces() {
     while (position < source.length && source[position] == ' ') {
@@ -65,18 +81,18 @@ class _Parser {
   }
 
   ExpressionNode _unary() {
-    if (_take('-')) return UnaryOpNode('-', _unary());
+    if (_take('-')) return UnaryOpNode('-', _nested(_unary));
     return _power();
   }
 
   ExpressionNode _power() {
     final node = _primary();
-    return _take('^') ? BinaryOpNode('^', node, _unary()) : node;
+    return _take('^') ? BinaryOpNode('^', node, _nested(_unary)) : node;
   }
 
   ExpressionNode _primary() {
     if (_take('(')) {
-      final node = _sum();
+      final node = _nested(_sum);
       if (!_take(')')) _fail('Ожидается закрывающая скобка');
       return node;
     }
@@ -92,7 +108,7 @@ class _Parser {
         _fail('Неизвестная функция «$name»');
       }
       if (!_take('(')) _fail('После функции ожидается открывающая скобка');
-      final argument = _sum();
+      final argument = _nested(_sum);
       if (!_take(')')) _fail('Ожидается закрывающая скобка');
       return FunctionNode(name, argument);
     }
