@@ -121,8 +121,8 @@ class ExpressionDisplay extends StatelessWidget {
                   enableSuggestions: false,
                   smartDashesType: SmartDashesType.disabled,
                   smartQuotesType: SmartQuotesType.disabled,
-                  // Keep focus and selection on Enter, even before calculation
-                  // is connected. Both submit controls use the screen callback.
+                  // Keep focus and selection on Enter. Both submit controls
+                  // use the same calculation handler.
                   onEditingComplete: () {},
                   onSubmitted: (_) => onSubmitted(),
                   textAlign: TextAlign.end,

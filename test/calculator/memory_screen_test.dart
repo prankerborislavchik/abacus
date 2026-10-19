@@ -38,7 +38,9 @@ void main() {
     expect(enabled('M+'), isFalse);
     expect(enabled('MR'), isFalse);
     await tester.enterText(field, '5');
-    session.publishResult(5); // Contract input from future #5 integration.
+    session.publishResult(
+      5,
+    ); // Seed the public controller contract for memory-specific checks.
     await tester.pump();
     await click('M+');
     await tester.enterText(field, '3');

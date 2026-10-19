@@ -6,23 +6,30 @@ import 'expression_node.dart';
 /// чтобы arg * (pi / 180) не переполнялся для больших углов.
 const double _degToRad = math.pi / 180;
 
+// Flat operator chains can produce deep ASTs without nested parser calls.
+// Bound recursion before it exhausts the platform's call stack.
+const int _maxEvaluationDepth = 512;
+
 /// Вычисляет AST до конечного double. Бросает [EvaluationException]
 /// при математических ошибках и при NaN/бесконечности.
 double evaluate(ExpressionNode node, {AngleMode angleMode = AngleMode.deg}) =>
-    _eval(node, angleMode);
+    _eval(node, angleMode, 0);
 
-double _eval(ExpressionNode node, AngleMode mode) {
+double _eval(ExpressionNode node, AngleMode mode, int depth) {
+  if (depth >= _maxEvaluationDepth) {
+    throw const EvaluationException('Слишком сложное выражение');
+  }
   final result = switch (node) {
     NumberNode(:final value) => value,
-    UnaryOpNode(:final operand) => -_eval(operand, mode),
+    UnaryOpNode(:final operand) => -_eval(operand, mode, depth + 1),
     BinaryOpNode(:final operator, :final left, :final right) => _binary(
       operator,
-      _eval(left, mode),
-      _eval(right, mode),
+      _eval(left, mode, depth + 1),
+      _eval(right, mode, depth + 1),
     ),
     FunctionNode(:final name, :final argument) => _function(
       name,
-      _eval(argument, mode),
+      _eval(argument, mode, depth + 1),
       mode,
     ),
   };
