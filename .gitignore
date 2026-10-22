@@ -8,6 +8,7 @@
 .pub-cache/
 .pub/
 /build/
+/dist/
 /coverage/
 
 # Local editors and operating systems
